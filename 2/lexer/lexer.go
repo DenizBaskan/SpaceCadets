@@ -3,7 +3,6 @@ package lexer
 import (
 	"slices"
 	"strconv"
-	"strings"
 	"unicode"
 )
 
@@ -28,14 +27,12 @@ type Token struct {
 
 // quite a dodgy function but works pretty well
 func Tokenize(data string) []Token {
-	var tokens []Token
-	terminators := []byte{'\n', '\r', ' ', ';'}
-
 	var (
-		i    = 0
-		line = 1
+		tokens []Token
+		i      = 0
+		line   = 1
 	)
-Out:
+
 	for i < len(data) {
 		switch data[i] {
 		case '\n':
@@ -48,7 +45,7 @@ Out:
 		case ';':
 			tokens = append(tokens, Token{Symbol, ";", line})
 			i++
-		
+
 		case '#':
 			// skip the comment
 			for i < len(data) && data[i] != '\n' {
@@ -56,33 +53,22 @@ Out:
 			}
 
 		default:
-			for _, keyword := range keywords {
-				if strings.HasPrefix(data[i:], keyword) {
-					if i+len(keyword) < len(data) && !slices.Contains(terminators, data[i+len(keyword)]) {
-						// character after keyword is not a space or a comma thus not a keyword
-						continue
-					}
+			// collect a string
 
-					tokens = append(tokens, Token{Keyword, keyword, line})
-					i += len(keyword)
-					continue Out
-				}
-			}
-
-			s := ""
-
-			// gather the string
-			for i < len(data) && !slices.Contains(terminators, data[i]) {
-				s += string(data[i])
+			str := ""
+			for i < len(data) && !slices.Contains([]byte{'\n', '\r', ' ', ';'}, data[i]) {
+				str += string(data[i])
 				i++
 			}
 
-			if validIdentifer(s) {
-				tokens = append(tokens, Token{Identifer, s, line})
-			} else if _, err := strconv.Atoi(s); err == nil {
-				tokens = append(tokens, Token{Integer, s, line})
+			if slices.Contains(keywords, str) {
+				tokens = append(tokens, Token{Keyword, str, line})
+			} else if isIdentifier(str) {
+				tokens = append(tokens, Token{Identifer, str, line})
+			} else if _, err := strconv.Atoi(str); err == nil {
+				tokens = append(tokens, Token{Integer, str, line})
 			} else {
-				tokens = append(tokens, Token{Illegal, string(s), line})
+				tokens = append(tokens, Token{Illegal, string(str), line})
 			}
 		}
 	}
@@ -90,7 +76,7 @@ Out:
 	return append(tokens, Token{EOF, "", line})
 }
 
-func validIdentifer(s string) bool {
+func isIdentifier(s string) bool {
 	if s[0] != '_' && !unicode.IsLetter(rune(s[0])) {
 		return false
 	}
