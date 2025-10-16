@@ -22,11 +22,12 @@ func main() {
 	}
 
 	tokens := lexer.Tokenize(string(b))
-	fmt.Println(tokens)
-	nodes := parser.ParseNodes(tokens)
+	fmt.Println("Created token stream")
+
+	p := parser.NewParser(tokens)
+	nodes := p.Parse()
+	fmt.Println("Parsing complete")
 
 	env := make(map[string]int)
 	ast.ExecuteNodes(nodes, env)
-
-	fmt.Println(env)
 }

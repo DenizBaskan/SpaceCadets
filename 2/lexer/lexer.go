@@ -6,14 +6,14 @@ import (
 	"unicode"
 )
 
-type TokenType uint8
+type TokenType string
 
 const (
-	Keyword TokenType = iota
-	Identifer
-	Symbol
-	Integer
-	Illegal
+	Keyword   TokenType = "KEYWORD"
+	Identifer TokenType = "IDENTIFIER"
+	Symbol    TokenType = "SYMBOL"
+	Integer   TokenType = "INTEGER"
+	Illegal   TokenType = "ILLEGAL"
 )
 
 var keywords = []string{"clear", "incr", "decr", "while", "not", "do", "end"}
@@ -21,29 +21,37 @@ var keywords = []string{"clear", "incr", "decr", "while", "not", "do", "end"}
 type Token struct {
 	Type    TokenType
 	Literal string
+	Line    int
 }
 
 func Tokenize(data string) []Token {
 	var tokens []Token
 
-	data = strings.ReplaceAll(data, "\n", "")
-	data = strings.ReplaceAll(data, "\r", "")
-
-	i := 0
+	var (
+		i    = 0
+		line = 1
+	)
 Out:
 	for i < len(data) {
 		switch data[i] {
+		case '\n':
+			line++
+			i++
+			continue
+		case '\r':
+			i++
+			continue
 		case ' ':
 			i++
 			continue
 		case ';':
 			i++
-			tokens = append(tokens, Token{Symbol, ";"})
+			tokens = append(tokens, Token{Symbol, ";", line})
 			continue
 		default:
 			for _, keyword := range keywords {
 				if strings.HasPrefix(data[i:], keyword) && slices.Contains([]string{" ", ";"}, string(data[i+len(keyword)])) {
-					tokens = append(tokens, Token{Keyword, keyword})
+					tokens = append(tokens, Token{Keyword, keyword, line})
 					i += len(keyword)
 					continue Out
 				}
@@ -56,7 +64,7 @@ Out:
 					num += string(data[i])
 					i++
 				}
-				tokens = append(tokens, Token{Integer, num})
+				tokens = append(tokens, Token{Integer, num, line})
 				continue
 			}
 
@@ -66,11 +74,11 @@ Out:
 					s += string(data[i])
 					i++
 				}
-				tokens = append(tokens, Token{Identifer, s})
+				tokens = append(tokens, Token{Identifer, s, line})
 				continue
 			}
 
-			tokens = append(tokens, Token{Illegal, string(data[i])})
+			tokens = append(tokens, Token{Illegal, string(data[i]), line})
 			i++
 		}
 	}

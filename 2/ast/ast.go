@@ -1,5 +1,7 @@
 package ast
 
+import "fmt"
+
 type Env map[string]int
 
 type Node interface {
@@ -27,8 +29,9 @@ type (
 	}
 
 	While struct {
-		Var, Not Value
-		Body     []Node
+		Var  string
+		Not  int
+		Body []Node
 	}
 )
 
@@ -38,6 +41,8 @@ func (i *Incr) Execute(env Env) {
 	}
 
 	env[i.Var]++
+
+	fmt.Printf("INCR %s -> %s", i.Var, state(env))
 }
 
 func (d *Decr) Execute(env Env) {
@@ -46,40 +51,37 @@ func (d *Decr) Execute(env Env) {
 	}
 
 	env[d.Var]--
+	
+	fmt.Printf("DECR %s -> %s", d.Var, state(env))
 }
 
 func (c *Clear) Execute(env Env) {
 	env[c.Var] = 0
+	fmt.Printf("CLEAR %s -> %s", c.Var, state(env))
 }
 
 func (w *While) Execute(env Env) {
-	for w.Var.ToInt(env) != w.Not.ToInt(env) {
+	if _, ok := env[w.Var]; !ok {
+		env[w.Var] = 0
+	}
+
+	for env[w.Var] != w.Not {
 		ExecuteNodes(w.Body, env)
 	}
+
+	fmt.Printf("WHILE %s NOT %d -> %s", w.Var, w.Not, state(env))
 }
 
-// helpers
-type Value interface {
-	ToInt(Env) int
-}
+// get a string representing global variable state
+func state(env Env) string {
+	s := ""
 
-type IntegerLiteral struct {
-	Num int
-}
-
-func (i *IntegerLiteral) ToInt(_ Env) int {
-	return i.Num
-}
-
-type Identifer struct {
-	Name string
-}
-
-func (i *Identifer) ToInt(env Env) int {
-	value, ok := env[i.Name]
-	if !ok {
-		value = 0
+	for name, value := range env {
+		s += fmt.Sprintf("%s=%d ", name, value)
 	}
 
-	return value
+	s = s[:len(s) - 1]
+	s += "\n"
+
+	return s
 }
