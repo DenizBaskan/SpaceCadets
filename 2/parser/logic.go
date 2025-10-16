@@ -80,10 +80,6 @@ func (p *Parser) parseWhile() *ast.While {
 	for p.current().Literal != "end" {
 		subnode := p.parseStatement()
 		node.Body = append(node.Body, subnode)
-
-		if p.index >= len(p.tokens) {
-			panic("program ended without termination of the while loop")
-		}
 	}
 	p.advance()
 

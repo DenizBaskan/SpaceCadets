@@ -28,6 +28,7 @@ type Token struct {
 
 func Tokenize(data string) []Token {
 	var tokens []Token
+	terminators := []byte{'\n', '\r', ' ', ';'}
 
 	var (
 		i    = 0
@@ -40,10 +41,7 @@ Out:
 			line++
 			i++
 
-		case '\r':
-			i++
-
-		case ' ':
+		case '\r', ' ':
 			i++
 
 		case ';':
@@ -53,7 +51,7 @@ Out:
 		default:
 			for _, keyword := range keywords {
 				if strings.HasPrefix(data[i:], keyword) {
-					if i+len(keyword) < len(data) && !slices.Contains([]string{" ", ";"}, string(data[i+len(keyword)])) {
+					if i+len(keyword) < len(data) && !slices.Contains(terminators, data[i+len(keyword)]) {
 						// character after keyword is not a space or a comma thus not a keyword
 						continue
 					}
@@ -66,8 +64,8 @@ Out:
 
 			s := ""
 
-			// gather a string until the end of the file or until a whitespace or ;
-			for i < len(data) && data[i] != ';' && data[i] != ' ' {
+			// gather the string
+			for i < len(data) && !slices.Contains(terminators, data[i]) {
 				s += string(data[i])
 				i++
 			}
@@ -79,8 +77,6 @@ Out:
 			} else {
 				tokens = append(tokens, Token{Illegal, string(s), line})
 			}
-
-			i += len(s)
 		}
 	}
 
