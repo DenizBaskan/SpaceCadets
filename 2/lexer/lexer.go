@@ -26,6 +26,7 @@ type Token struct {
 	Line    int
 }
 
+// quite a dodgy function but works pretty well
 func Tokenize(data string) []Token {
 	var tokens []Token
 	terminators := []byte{'\n', '\r', ' ', ';'}
@@ -47,6 +48,12 @@ Out:
 		case ';':
 			tokens = append(tokens, Token{Symbol, ";", line})
 			i++
+		
+		case '#':
+			// skip the comment
+			for i < len(data) && data[i] != '\n' {
+				i++
+			}
 
 		default:
 			for _, keyword := range keywords {
