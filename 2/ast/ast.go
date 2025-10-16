@@ -30,8 +30,11 @@ type (
 
 	While struct {
 		Var  string
-		Not  int
 		Body []Node
+	}
+
+	Copy struct {
+		Src, Dst string
 	}
 )
 
@@ -52,6 +55,11 @@ func (d *Decr) Execute(env Env) {
 
 	env[d.Var]--
 	
+	// Variable cannot go below 0
+	if env[d.Var] < 0 {
+		env[d.Var] = 0
+	}
+
 	fmt.Printf("DECR %s -> %s", d.Var, state(env))
 }
 
@@ -65,11 +73,25 @@ func (w *While) Execute(env Env) {
 		env[w.Var] = 0
 	}
 
-	for env[w.Var] != w.Not {
+	for env[w.Var] != 0 {
 		ExecuteNodes(w.Body, env)
 	}
 
-	fmt.Printf("WHILE %s NOT %d -> %s", w.Var, w.Not, state(env))
+	fmt.Printf("WHILE %s NOT 0 -> %s", w.Var, state(env))
+}
+
+func (c *Copy) Execute(env Env) {
+	if _, ok := env[c.Src]; !ok {
+		env[c.Src] = 0
+	}
+
+	if _, ok := env[c.Dst]; !ok {
+		env[c.Dst] = 0
+	}
+
+	env[c.Dst] = env[c.Src]
+
+	fmt.Printf("COPY %s TO %s -> %s", c.Src, c.Dst, state(env))
 }
 
 // get a string representing global variable state

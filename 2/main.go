@@ -23,6 +23,7 @@ func main() {
 
 	tokens := lexer.Tokenize(string(b))
 	fmt.Println("Created token stream")
+	fmt.Println(tokens)
 
 	p := parser.NewParser(tokens)
 	nodes := p.Parse()

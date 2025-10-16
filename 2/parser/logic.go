@@ -5,7 +5,6 @@ import (
 	"interpreter/ast"
 	"interpreter/lexer"
 	"slices"
-	"strconv"
 )
 
 func (p *Parser) advance()             { p.index++ }
@@ -52,6 +51,8 @@ func (p *Parser) parseStatement() ast.Node {
 		}
 	} else if token.Literal == "while" {
 		return p.parseWhile()
+	} else if token.Literal == "copy" {
+		return p.parseCopy()
 	}
 
 	panic("unknown keyword: " + token.Literal)
@@ -67,12 +68,7 @@ func (p *Parser) parseWhile() *ast.While {
 	p.expect("not")
 	p.advance()
 
-	token = p.expect(lexer.Integer)
-	not, err := strconv.Atoi(token.Literal)
-	if err != nil {
-		panic(fmt.Sprintf("line: %d: invalid integer %s", token.Line, token.Literal))
-	}
-	node.Not = not
+	token = p.expect("0")
 	p.advance()
 
 	p.expect("do")
@@ -84,11 +80,31 @@ func (p *Parser) parseWhile() *ast.While {
 	for p.current().Literal != "end" {
 		subnode := p.parseStatement()
 		node.Body = append(node.Body, subnode)
-		
+
 		if p.index >= len(p.tokens) {
 			panic("program ended without termination of the while loop")
 		}
 	}
+	p.advance()
+
+	p.expect(";")
+	p.advance()
+
+	return &node
+}
+
+func (p *Parser) parseCopy() *ast.Copy {
+	node := ast.Copy{}
+
+	token := p.expect(lexer.Identifer)
+	node.Src = token.Literal
+	p.advance()
+
+	p.expect("to")
+	p.advance()
+
+	token = p.expect(lexer.Identifer)
+	node.Dst = token.Literal
 	p.advance()
 
 	p.expect(";")
